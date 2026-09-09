@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "omameter.activity",
+  "name": "Omameter",
+  "version": "1.1.1",
+  "author": "Sugata",
+  "description": "Privacy-preserving system-wide pointer and keyboard activity statistics for Omarchy.",
+  "license": "MIT",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Omameter",
+    "description": "System-wide input activity dashboard with heatmap, shortcuts, and privacy controls",
+    "category": "System",
+    "allowMultiple": false,
+    "defaultSection": "center"
+  }
+}
