@@ -4,12 +4,11 @@ Omacount is a native Omarchy/Hyprland/Quickshell plugin that counts real,
 system-wide keyboard, mouse, and touchpad activity. A compact bar entry opens a
 three-page dashboard for pointer statistics, keyboard statistics, and settings.
 
-It is not a browser extension. The collector is a systemd-managed
-per-user-session process: it runs as your user, starts with that user's runtime,
-stops after logout, consumes libinput file-descriptor events, and persists
-aggregate state across restarts. Pointer activity and shortcuts are system-wide;
-typed-key metrics are admitted while Hyprland has a focused application and are
-rejected on the empty home/desktop screen.
+The collector is a systemd-managed per-user-session process: it runs as your user,
+starts with that user's runtime,stops after logout, consumes libinput file-descriptor 
+events, and persists aggregate state across restarts. Pointer activity and shortcuts
+are system-wide; typed-key metrics are admitted while Hyprland has a focused application 
+and are rejected on the empty home/desktop screen.
 
 ## What this machine supports
 
