@@ -1,14 +1,15 @@
-# Omameter for Omarchy
+# Omacount for Omarchy
 
-Omameter is a native Omarchy/Hyprland/Quickshell plugin that counts real,
+Omacount is a native Omarchy/Hyprland/Quickshell plugin that counts real,
 system-wide keyboard, mouse, and touchpad activity. A compact bar entry opens a
 three-page dashboard for pointer statistics, keyboard statistics, and settings.
 
-The collector is a systemd-managed per-user-session process: it runs as your user, 
-starts with that user's runtime, stops after logout, consumes libinput file-descriptor 
-events, and persists aggregate state across restarts. Pointer activity and shortcuts
-are system-wide; typed-key metrics are admitted while Hyprland has a focused application
-and are rejected on the empty home/desktop screen.
+It is not a browser extension. The collector is a systemd-managed
+per-user-session process: it runs as your user, starts with that user's runtime,
+stops after logout, consumes libinput file-descriptor events, and persists
+aggregate state across restarts. Pointer activity and shortcuts are system-wide;
+typed-key metrics are admitted while Hyprland has a focused application and are
+rejected on the empty home/desktop screen.
 
 ## What this machine supports
 
@@ -22,12 +23,12 @@ The implementation was selected after inspecting the target system:
   active-user ACL. A normal user service therefore cannot collect global input.
 
 Hyprland itself does not publish global key and pointer events over its IPC
-socket. Omameter uses libinput—the same event-driven input stack a Wayland
+socket. Omacount uses libinput—the same event-driven input stack a Wayland
 compositor uses—instead of polling cursor position or fabricating data.
 
 ## Privacy model
 
-Omameter never requests or persists:
+Omacount never requests or persists:
 
 - typed strings, passwords, composed characters, or ordered keystrokes;
 - clipboard data, window titles, window contents, application names, or focus
@@ -49,13 +50,13 @@ discarded immediately and never written to state.
 The state and settings files are private (`0600`) beneath:
 
 ```text
-~/.local/state/omameter/aggregate.json  durable counters
-~/.local/state/omameter/stats.json      derived dashboard snapshot
-~/.config/omameter/settings.json        persisted settings
+~/.local/state/omacount/aggregate.json  durable counters
+~/.local/state/omacount/stats.json      derived dashboard snapshot
+~/.config/omacount/settings.json        persisted settings
 ```
 
 The local control socket lives in systemd's private
-`/run/omameter-UID/control.sock` runtime directory and disappears when the
+`/run/omacount-UID/control.sock` runtime directory and disappears when the
 collector stops.
 
 ### Input permission security implication
@@ -70,7 +71,7 @@ goes away.
 The collector can still observe raw input while it runs—that access is
 unavoidable for system-wide counts. The service applies a read-only input-device
 cgroup, the libinput open callback independently forces read-only descriptors,
-and systemd hardening makes the filesystem read-only except for Omameter's two
+and systemd hardening makes the filesystem read-only except for Omacount's two
 state directories. The service cannot open IPv4 or IPv6 sockets. Other apps
 running as the same user do not inherit the collector service's supplementary
 group.
@@ -98,7 +99,7 @@ Definitions:
   and measured typing-active time. Peak WPM is the best rolling 60-second key
   bucket.
 - Accuracy is a privacy-preserving proxy: printable presses remaining after
-  Backspace/Delete presses, divided by printable presses. Omameter cannot know
+  Backspace/Delete presses, divided by printable presses. Omacount cannot know
   editor undo state without observing content, which it intentionally avoids.
 - A shortcut is a non-modifier pressed while Ctrl, left Alt, or Super is held.
   Shift and AltGr remain typing modifiers. Shortcuts count globally but are
@@ -109,7 +110,7 @@ Definitions:
 ## Distance calibration and limitations
 
 libinput reports accelerated relative motion in standardized mouse-pixel units.
-Omameter converts each delta through the active Hyprland monitor's logical size,
+Omacount converts each delta through the active Hyprland monitor's logical size,
 scale, and EDID physical dimensions. It initializes cursor location through the
 direct Hyprland Unix socket, listens for monitor/config events, and resynchronizes
 only on multi-monitor boundary crossings. This accounts for layouts where
@@ -118,7 +119,7 @@ polling loop.
 
 There are unavoidable limitations:
 
-- EDID physical dimensions can be absent or inaccurate. Omameter marks the
+- EDID physical dimensions can be absent or inaccurate. Omacount marks the
   dashboard `EDID calibrated` when present and otherwise falls back to 96 DPI.
 - Cursor distance is on-screen pointer travel, not the hand's physical travel
   over a mouse mat or a finger's travel over the touchpad.
@@ -132,12 +133,12 @@ There are unavoidable limitations:
 - The heatmap represents Linux physical key codes in a US-layout drawing. Counts
   remain correct on other layouts, while printed legends may differ.
 - Wayland deliberately provides no universal API that lets another process
-  inspect arbitrary in-application text-field focus. Omameter therefore treats
+  inspect arbitrary in-application text-field focus. Omacount therefore treats
   typing-capable keys in a focused application as typing and rejects them when
   no application window is focused. This works consistently in terminals,
   native Wayland clients, and XWayland while keeping the home screen excluded;
   a single unmodified letter used as an application command can be
-  indistinguishable from typed text without observing content, which Omameter
+  indistinguishable from typed text without observing content, which Omacount
   refuses to do.
 - Version 1.1 migrates older data by clearing only the previously mixed
   typed-key, heatmap, typing-time, WPM, and accuracy inputs. Pointer and shortcut
@@ -149,14 +150,14 @@ Run from a terminal so `sudo` can install and enable the process-scoped system
 service:
 
 ```bash
-cd /home/sugata/Work/omameter
+cd /home/sugata/Work/omacount
 ./install.sh
 ```
 
 The installer follows the same lifecycle as `omarchy-now-playing`: it validates
 the manifest, backs up `shell.json`, allowlists copied plugin files, asks the
-shell to rescan, and enables only `omameter.activity`. In addition it installs
-the private runtime and `omameter-collector-UID.service`, then binds the service
+shell to rescan, and enables only `omacount.activity`. In addition it installs
+the private runtime and `omacount-collector-UID.service`, then binds the service
 to this user's login runtime. It never edits `/usr/share/omarchy/`, never changes
 account group membership or input ACLs, and does not modify
 `omarchy-now-playing`.
@@ -180,21 +181,21 @@ Preview all intended destinations without making changes:
 The local CLI is also available:
 
 ```bash
-omameterctl status
-omameterctl pause
-omameterctl resume
-omameterctl set-unit bananas
-omameterctl set-custom "desk lengths" desk 1.2
-omameterctl set-metric rage_clicks off
-omameterctl reset
+omacountctl status
+omacountctl pause
+omacountctl resume
+omacountctl set-unit bananas
+omacountctl set-custom "desk lengths" desk 1.2
+omacountctl set-metric rage_clicks off
+omacountctl reset
 ```
 
 ## Diagnostics and tests
 
 ```bash
-systemctl status "omameter-collector-$(id -u)"
-journalctl -u "omameter-collector-$(id -u)" -b
-python3 ~/.local/lib/omameter/collector.py --check
+systemctl status "omacount-collector-$(id -u)"
+journalctl -u "omacount-collector-$(id -u)" -b
+python3 ~/.local/lib/omacount/collector.py --check
 ./tests/run.sh
 ```
 
@@ -207,7 +208,7 @@ system Python, libinput, libudev, systemd, Hyprland, Quickshell, jq, and Omarchy
 ./uninstall.sh
 ```
 
-The uninstall disables the exact bar entry and removes the Omameter-marked
+The uninstall disables the exact bar entry and removes the Omacount-marked
 system unit, then moves installed files to a timestamped recoverable backup. It
 does not alter the `input` group or any device ACL. Statistics/settings stay in
 place by default. To move those into the backup too:

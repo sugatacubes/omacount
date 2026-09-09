@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install Omameter as an Omarchy bar plugin plus a per-user-session collector.
+# Install Omacount as an Omarchy bar plugin plus a per-user-session collector.
 # Idempotent and careful: existing plugin/runtime/config files are backed up.
 
 set -euo pipefail
@@ -8,20 +8,20 @@ REPO_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 PLUGIN_ID="$(jq -r '.id // ""' "$REPO_DIR/manifest.json" 2>/dev/null || true)"
 PLUGIN_ROOT="$HOME/.config/omarchy/plugins"
 PLUGIN_TARGET="$PLUGIN_ROOT/$PLUGIN_ID"
-RUNTIME_TARGET="$HOME/.local/lib/omameter"
-BIN_TARGET="$HOME/.local/bin/omameterctl"
+RUNTIME_TARGET="$HOME/.local/lib/omacount"
+BIN_TARGET="$HOME/.local/bin/omacountctl"
 SHELL_JSON="$HOME/.config/omarchy/shell.json"
 USER_ID="$(id -u)"
 USER_NAME="$(id -un)"
 PRIMARY_GROUP="$(id -gn)"
-SERVICE_NAME="omameter-collector-${USER_ID}.service"
+SERVICE_NAME="omacount-collector-${USER_ID}.service"
 SERVICE_TARGET="/etc/systemd/system/$SERVICE_NAME"
-SERVICE_TEMPLATE="$REPO_DIR/systemd/omameter-collector.service.in"
-STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/omameter"
-CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/omameter"
-CONTROL_RUNTIME="/run/omameter-$USER_ID"
+SERVICE_TEMPLATE="$REPO_DIR/systemd/omacount-collector.service.in"
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/omacount"
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/omacount"
+CONTROL_RUNTIME="/run/omacount-$USER_ID"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
-BACKUP_ROOT="$HOME/.config/omarchy/backups/$STAMP-omameter"
+BACKUP_ROOT="$HOME/.config/omarchy/backups/$STAMP-omacount"
 DRY_RUN=0
 GENERATED_UNIT=""
 
@@ -42,7 +42,7 @@ getent group input >/dev/null || { echo "ERROR: system input group not found" >&
 
 echo ">> validating Omarchy manifest and Python sources"
 omarchy plugin validate "$REPO_DIR"
-python3 -m py_compile "$REPO_DIR"/src/*.py "$REPO_DIR/src/omameterctl"
+python3 -m py_compile "$REPO_DIR"/src/*.py "$REPO_DIR/src/omacountctl"
 python3 - <<'PY'
 import ctypes.util
 import sys
@@ -54,9 +54,9 @@ PY
 
 cat <<'SECURITY'
 
-Omameter permission notice
+Omacount permission notice
 ---------------------------
-Raw keyboard and pointer events require the system "input" group. Omameter
+Raw keyboard and pointer events require the system "input" group. Omacount
 does NOT add your login account to that group and does NOT broaden /dev/input
 ACLs. Instead, systemd gives the supplementary group only to the hardened
 collector service, scoped to your login runtime and stopped after logout.
@@ -67,7 +67,7 @@ rejecting keys pressed on the empty home/desktop screen. Window identity is
 discarded immediately and never persisted.
 
 That service can observe raw input while it runs. The input open callback and
-device cgroup are read-only; Omameter persists only totals and cannot open
+device cgroup are read-only; Omacount persists only totals and cannot open
 IPv4/IPv6 sockets. The service definition is installed under /etc and therefore
 needs one sudo/polkit authorization.
 SECURITY
@@ -122,7 +122,7 @@ mkdir -p "$BACKUP_ROOT"
 if [[ -f "$SHELL_JSON" ]]; then cp -a "$SHELL_JSON" "$BACKUP_ROOT/shell.json"; fi
 if [[ -e "$PLUGIN_TARGET" ]]; then mv "$PLUGIN_TARGET" "$BACKUP_ROOT/plugin"; fi
 if [[ -e "$RUNTIME_TARGET" ]]; then mv "$RUNTIME_TARGET" "$BACKUP_ROOT/runtime"; fi
-if [[ -e "$BIN_TARGET" ]]; then cp -a "$BIN_TARGET" "$BACKUP_ROOT/omameterctl"; fi
+if [[ -e "$BIN_TARGET" ]]; then cp -a "$BIN_TARGET" "$BACKUP_ROOT/omacountctl"; fi
 
 echo ">> installing private collector runtime"
 mkdir -p "$RUNTIME_TARGET" "$(dirname -- "$BIN_TARGET")" "$STATE_DIR" "$CONFIG_DIR"
@@ -130,7 +130,7 @@ chmod 700 "$STATE_DIR" "$CONFIG_DIR"
 for file in collector.py hyprland.py libinput_backend.py metrics.py storage.py; do
   install -m0644 "$REPO_DIR/src/$file" "$RUNTIME_TARGET/$file"
 done
-install -m0755 "$REPO_DIR/src/omameterctl" "$BIN_TARGET"
+install -m0755 "$REPO_DIR/src/omacountctl" "$BIN_TARGET"
 install -m0644 "$REPO_DIR/README.md" "$RUNTIME_TARGET/README.md"
 
 echo ">> installing Omarchy shell plugin"
@@ -149,7 +149,7 @@ for ((attempt=0; attempt<80; attempt++)); do
   sleep 0.05
 done
 "$BIN_TARGET" status >/dev/null || {
-  echo "ERROR: Omameter collector did not become ready" >&2
+  echo "ERROR: Omacount collector did not become ready" >&2
   run_privileged systemctl --no-pager --full status "$SERVICE_NAME" >&2 || true
   exit 1
 }
@@ -174,7 +174,7 @@ omarchy plugin enable "$PLUGIN_ID"
 permission_ok="$(jq -r '.collector.permission_ok // false' "$STATE_DIR/stats.json" 2>/dev/null || echo false)"
 cat <<DONE
 
-Installed Omameter.
+Installed Omacount.
 
 - Bar widget: $PLUGIN_TARGET
 - Collector service: $SERVICE_TARGET

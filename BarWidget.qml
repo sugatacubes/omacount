@@ -7,7 +7,7 @@ import "Model.js" as Model
 
 BarWidget {
   id: root
-  moduleName: "omameter.activity"
+  moduleName: "omacount.activity"
 
   property bool popupOpen: false
   property var stats: ({ totals: {}, collector: {}, per_key: {}, shortcuts: {} })
@@ -15,9 +15,9 @@ BarWidget {
   readonly property string home: Quickshell.env("HOME")
   readonly property string stateHome: Quickshell.env("XDG_STATE_HOME") || home + "/.local/state"
   readonly property string configHome: Quickshell.env("XDG_CONFIG_HOME") || home + "/.config"
-  readonly property string statsPath: stateHome + "/omameter/stats.json"
-  readonly property string settingsPath: configHome + "/omameter/settings.json"
-  readonly property string controlPath: home + "/.local/bin/omameterctl"
+  readonly property string statsPath: stateHome + "/omacount/stats.json"
+  readonly property string settingsPath: configHome + "/omacount/settings.json"
+  readonly property string controlPath: home + "/.local/bin/omacountctl"
   readonly property var totals: stats && stats.totals ? stats.totals : ({})
   readonly property bool healthy: stats && stats.collector && stats.collector.permission_ok === true
   readonly property bool opened: popupOpen
@@ -72,7 +72,7 @@ BarWidget {
   }
 
   Component {
-    id: omameterMark
+    id: omacountMark
 
     Item {
       opacity: root.preferences.paused ? 0.48 : 1
@@ -105,13 +105,13 @@ BarWidget {
     anchors.fill: parent
     bar: root.bar
     text: ""
-    iconComponent: omameterMark
+    iconComponent: omacountMark
     tooltipText: root.preferences.paused
-      ? "Omameter paused · click to inspect · right-click to resume"
+      ? "Omacount paused · click to inspect · right-click to resume"
       : root.healthy
-        ? "Omameter · " + Model.compact(root.totals.keys_pressed) + " keys · "
+        ? "Omacount · " + Model.compact(root.totals.keys_pressed) + " keys · "
           + Model.formatDistance(root.totals.pointer_distance_mm, root.preferences)
-        : "Omameter needs input permission · click for details"
+        : "Omacount needs input permission · click for details"
     onPressed: function(b) {
       if (b === Qt.RightButton) root.command([root.preferences.paused ? "resume" : "pause"])
       else root.togglePanel()
@@ -142,7 +142,7 @@ BarWidget {
   }
 
   IpcHandler {
-    target: "omameter.activity"
+    target: "omacount.activity"
     function open(): void { root.open() }
     function close(): void { root.close() }
     function show(): void { root.open() }

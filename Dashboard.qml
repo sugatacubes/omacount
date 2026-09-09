@@ -55,7 +55,7 @@ Item {
           anchors.verticalCenter: parent.verticalCenter
           spacing: 0
           Text {
-            text: "OMAMETER"
+            text: "OMACOUNT"
             color: root.foreground
             font.family: Style.font.family; font.pixelSize: Style.font.heading
             font.bold: true; font.letterSpacing: 1.6
@@ -137,7 +137,7 @@ Item {
         id: permissionText
         anchors.left: parent.left; anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
         anchors.leftMargin: Style.space(12); anchors.rightMargin: Style.space(12)
-        text: "Collector is installed but cannot read the selected input nodes. Run install.sh again or inspect: systemctl --user status omameter"
+        text: "Collector is installed but cannot read the selected input nodes. Run install.sh again or inspect: systemctl --user status omacount"
         color: root.foreground; font.family: Style.font.family; font.pixelSize: Style.font.caption
         wrapMode: Text.WordWrap
       }
@@ -198,7 +198,7 @@ Item {
   ConfirmDialog {
     id: resetDialog
     anchors.fill: parent
-    message: "Reset every Omameter aggregate? This cannot be undone. Your unit and visibility settings will be kept."
+    message: "Reset every Omacount aggregate? This cannot be undone. Your unit and visibility settings will be kept."
     confirmText: "Reset"
     foreground: root.foreground
     onCanceled: opened = false
