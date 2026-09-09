@@ -144,7 +144,10 @@ There are unavoidable limitations:
 - Version 1.1 migrates older data by clearing only the previously mixed
   typed-key, heatmap, typing-time, WPM, and accuracy inputs. Pointer and shortcut
   aggregates are preserved; future typed totals are cleanly separated.
-
+  
+Preview:
+  <img width="1080" height="702" alt="screenshot-2026-09-09_12-11-57" src="https://github.com/user-attachments/assets/b0609fec-464e-4782-9c1f-f0adbe267dda" />
+  
 ## Install
 
 Clone or download the repository, then run the installer from a terminal so
