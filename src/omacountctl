@@ -1,0 +1,90 @@
+#!/usr/bin/env python3
+"""Local control client for the Omacount user service."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import socket
+import sys
+from pathlib import Path
+
+
+def socket_path() -> Path:
+    managed = os.environ.get("OMACOUNT_RUNTIME_DIR", f"/run/omacount-{os.getuid()}")
+    path = Path(managed) / "control.sock"
+    if path.exists():
+        return path
+    # Development/user-service fallback for running collector.py directly.
+    runtime = os.environ.get("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}")
+    return Path(runtime) / "omacount" / "control.sock"
+
+
+def request(payload: dict) -> dict:
+    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
+        client.settimeout(2.0)
+        client.connect(str(socket_path()))
+        client.sendall(json.dumps(payload, separators=(",", ":")).encode())
+        client.shutdown(socket.SHUT_WR)
+        chunks = []
+        while True:
+            chunk = client.recv(65536)
+            if not chunk:
+                break
+            chunks.append(chunk)
+    response = json.loads(b"".join(chunks).decode())
+    if not response.get("ok"):
+        raise RuntimeError(response.get("error", "request failed"))
+    return response
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(prog="omacountctl")
+    sub = parser.add_subparsers(dest="command", required=True)
+    sub.add_parser("status")
+    sub.add_parser("pause")
+    sub.add_parser("resume")
+    sub.add_parser("toggle")
+    sub.add_parser("reset")
+    unit = sub.add_parser("set-unit")
+    unit.add_argument("unit", choices=("miles", "meters", "bananas", "custom"))
+    custom = sub.add_parser("set-custom")
+    custom.add_argument("name")
+    custom.add_argument("symbol")
+    custom.add_argument("metres_per_unit", type=float)
+    metric = sub.add_parser("set-metric")
+    metric.add_argument("metric")
+    metric.add_argument("enabled", choices=("on", "off"))
+    return parser
+
+
+def main(argv=None) -> int:
+    args = build_parser().parse_args(argv)
+    commands = {
+        "status": {"command": "status"},
+        "pause": {"command": "set-paused", "value": True},
+        "resume": {"command": "set-paused", "value": False},
+        "toggle": {"command": "toggle-paused"},
+        "reset": {"command": "reset"},
+    }
+    if args.command == "set-unit":
+        payload = {"command": "set-unit", "value": args.unit}
+    elif args.command == "set-custom":
+        payload = {"command": "set-custom", "name": args.name,
+                   "symbol": args.symbol, "metres_per_unit": args.metres_per_unit}
+    elif args.command == "set-metric":
+        payload = {"command": "set-metric", "key": args.metric,
+                   "value": args.enabled == "on"}
+    else:
+        payload = commands[args.command]
+    try:
+        print(json.dumps(request(payload), indent=2))
+        return 0
+    except (OSError, ValueError, RuntimeError) as exc:
+        print(f"omacountctl: {exc}", file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

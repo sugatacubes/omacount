@@ -4,22 +4,24 @@ Omacount is a native Omarchy/Hyprland/Quickshell plugin that counts real,
 system-wide keyboard, mouse, and touchpad activity. A compact bar entry opens a
 three-page dashboard for pointer statistics, keyboard statistics, and settings.
 
-The collector is a systemd-managed per-user-session process: it runs as your user,
-starts with that user's runtime,stops after logout, consumes libinput file-descriptor 
-events, and persists aggregate state across restarts. Pointer activity and shortcuts
-are system-wide; typed-key metrics are admitted while Hyprland has a focused application 
-and are rejected on the empty home/desktop screen.
+The collector is a systemd-managed per-user-session process: it runs as your
+user, starts with that user's runtime, stops after logout, consumes libinput
+file-descriptor events, and persists aggregate state across restarts. Pointer
+activity and shortcuts are system-wide; typed-key metrics are admitted while
+Hyprland has a focused application and are rejected on the empty home/desktop
+screen.
 
-## What this machine supports
+## Requirements and event source
 
-The implementation was selected after inspecting the target system:
+Omacount targets Omarchy installations using Hyprland and Quickshell. It also
+requires systemd, Python 3, jq, libinput, libudev, and the standard Linux
+`input` group.
 
-- Hyprland exposes one `eDP-1` monitor at 1920×1080, scale 1, with a reported
-  physical size of 310×170 mm.
-- libinput 1.31.3 and libudev are installed.
-- A Synaptics `SYNA328B` touchpad, a USB mouse, and an AT keyboard are present.
-- `/dev/input/event*` is owned by `root:input` at mode `0660`, with no existing
-  active-user ACL. A normal user service therefore cannot collect global input.
+On a typical Omarchy installation, `/dev/input/event*` is readable by
+`root:input` rather than an ordinary user service. The installer handles this
+without adding the login account to that powerful group and without installing
+a broad udev ACL. Only Omacount's hardened collector service receives the
+supplementary group while it runs.
 
 Hyprland itself does not publish global key and pointer events over its IPC
 socket. Omacount uses libinput—the same event-driven input stack a Wayland
@@ -82,9 +84,9 @@ rage-click bursts, average/peak scroll speed, detected trackpad state, and a
 small energy estimate. Touchpad-generated pointer motion is included in cursor
 distance automatically.
 
-Page 2 includes focused-application typing presses, separately counted shortcut use,
-average/peak WPM, typed vs undone accuracy, typing-to-mouse active-time ratio,
-and energy. Shortcut components never inflate the typed-key headline or
+Page 2 includes focused-application typing presses, separately counted shortcut
+use, average/peak WPM, typed vs undone accuracy, typing-to-mouse active-time
+ratio, and energy. Shortcut components never inflate the typed-key headline or
 heatmap. The shortcut breakdown and US physical keyboard heatmap use the real
 aggregate counters; hovering a heatmap key reveals its exact typed total.
 
@@ -145,21 +147,20 @@ There are unavoidable limitations:
 
 ## Install
 
-Run from a terminal so `sudo` can install and enable the process-scoped system
-service:
+Clone or download the repository, then run the installer from a terminal so
+`sudo` can install and enable the process-scoped system service:
 
 ```bash
-cd /home/sugata/Work/omacount
+cd /path/to/omacount
 ./install.sh
 ```
 
-The installer follows the same lifecycle as `omarchy-now-playing`: it validates
-the manifest, backs up `shell.json`, allowlists copied plugin files, asks the
-shell to rescan, and enables only `omacount.activity`. In addition it installs
-the private runtime and `omacount-collector-UID.service`, then binds the service
-to this user's login runtime. It never edits `/usr/share/omarchy/`, never changes
-account group membership or input ACLs, and does not modify
-`omarchy-now-playing`.
+The installer validates the manifest, backs up `shell.json`, allowlists copied
+plugin files, asks the shell to rescan, and enables only `omacount.activity`.
+It also installs the private runtime and `omacount-collector-UID.service`, then
+binds the service to the current user's login runtime. It never edits
+`/usr/share/omarchy/`, changes account group membership, broadens input ACLs, or
+modifies another plugin.
 
 Preview all intended destinations without making changes:
 

@@ -1,0 +1,48 @@
+# Managed by Omacount. Generated for one local user's graphical session.
+[Unit]
+Description=Omacount aggregate input statistics for @USER@
+Documentation=file:@RUNTIME_DIR@/README.md
+BindsTo=user-runtime-dir@@UID@.service
+After=user-runtime-dir@@UID@.service
+
+[Service]
+Type=simple
+User=@USER@
+Group=@GROUP@
+SupplementaryGroups=input
+WorkingDirectory=@RUNTIME_DIR@
+ExecStart=/usr/bin/python3 @RUNTIME_DIR@/collector.py
+Restart=on-failure
+RestartSec=2
+UMask=0077
+Environment=HOME=@HOME_DIR@
+Environment=XDG_RUNTIME_DIR=/run/user/@UID@
+Environment=OMACOUNT_RUNTIME_DIR=/run/omacount-@UID@
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONDONTWRITEBYTECODE=1
+RuntimeDirectory=omacount-@UID@
+RuntimeDirectoryMode=0700
+
+# Only this process receives the supplementary input group. The login account
+# is not added to that group. Device cgroup policy and the collector callback
+# additionally enforce read-only input-device access.
+DevicePolicy=closed
+DeviceAllow=char-input r
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=@STATE_DIR@ @CONFIG_DIR@ /run/omacount-@UID@
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictSUIDSGID=yes
+RestrictRealtime=yes
+RestrictNamespaces=yes
+LockPersonality=yes
+RestrictAddressFamilies=AF_UNIX AF_NETLINK
+
+[Install]
+WantedBy=user-runtime-dir@@UID@.service
